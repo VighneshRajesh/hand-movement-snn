@@ -1,0 +1,1 @@
+print("Hand Movement SNN Project Started")
