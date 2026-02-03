@@ -27,11 +27,10 @@ def read_aedat31(filepath, max_events=50000):
                     break
 
                 data, timestamp = struct.unpack("II", raw)
-
-                x = (data >> 17) & 0x1FFF
-                y = (data >> 2) & 0x1FFF
+                x = ((data >> 17) & 0x1FFF) & 0x7F
+                y = ((data >> 2)  & 0x1FFF) & 0x7F
                 p = (data >> 1) & 0x1
-
+                
                 events.append((x, y, timestamp, p))
 
                 if len(events) >= max_events:
