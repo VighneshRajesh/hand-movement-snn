@@ -5,3 +5,4 @@ venv39/
 __pycache__/
 *.pyc
 __pycache__
+region_spike_trains.json
