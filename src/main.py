@@ -9,7 +9,7 @@ import json
 # -------------------------------
 # 1. Dataset file path
 # -------------------------------
-aedat_file = "//home/asus/Desktop/snn/dataset/DvsGesture/user10/user10_fluorescent_led.aedat"
+aedat_file =r"C:\Users\USER\hand-movement-snn\dataset\DVSGesture\user10\user10_fluorescent_led.aedat"
 
 # -------------------------------
 # 2. Read DVS events

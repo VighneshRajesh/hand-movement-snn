@@ -4,3 +4,4 @@ venv310/
 venv39/
 __pycache__/
 *.pyc
+__pycache__
