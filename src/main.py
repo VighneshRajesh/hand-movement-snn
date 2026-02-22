@@ -9,18 +9,49 @@ import json
 # -------------------------------
 # 1. Dataset file path
 # -------------------------------
-aedat_file =r"C:\Users\USER\hand-movement-snn\dataset\DVSGesture\user10\user10_fluorescent_led.aedat"
+aedat_file = "/home/asus/Desktop/snn/dataset/DvsGesture/user02/user02_led.aedat"
 
 # -------------------------------
 # 2. Read DVS events
 # -------------------------------
-events = read_aedat31(aedat_file, max_events=20000)
-
+events = read_aedat31(aedat_file, max_events=500000)
 print("Total events read:", len(events))
 
+if not events:
+    print("No events found in file.")
+    exit()
+
+# Normalize timestamps
+t0 = events[0][2]
+events = [(x, y, t - t0, p) for (x, y, t, p) in events]
+
 # -------------------------------
-# 3. 8-region spatial pooling
+# 3. Filter ONLY right & left wave
 # -------------------------------
+
+# Relative timestamps (Class 2 & 3)
+START2 = 7252462
+END2   = 13009312
+
+START3 = 15184538
+END3   = 22010249
+
+events = [
+    e for e in events
+    if (START2 <= e[2] <= END2) or
+       (START3 <= e[2] <= END3)
+]
+
+print("Events after wave filtering:", len(events))
+
+if not events:
+    print("No events found for wave gestures.")
+    exit()
+
+# -------------------------------
+# 4. 8-region spatial pooling
+# -------------------------------
+
 def map_to_region(x, y):
     """
     Divide 128x128 sensor into 2x4 grid (8 regions)
@@ -30,7 +61,6 @@ def map_to_region(x, y):
     return row * 4 + col
 
 
-# Count events per region (for verification)
 region_counts = [0] * 8
 for x, y, t, p in events:
     region = map_to_region(x, y)
@@ -41,47 +71,52 @@ for i, count in enumerate(region_counts):
     print(f"Region {i}: {count} events")
 
 # -------------------------------
-# 4. Temporal spike generation
+# 5. Temporal spike generation (FIXED)
 # -------------------------------
-TIME_WINDOW = 10_000    # 10 ms (microseconds)
-THRESHOLD = 50          # events required to fire a spike
+
+TIME_WINDOW = 500000   # 500 ms
+THRESHOLD = 5
 NUM_REGIONS = 8
 
-# Sort events by time
 events.sort(key=lambda e: e[2])
 
-# Initialize spike trains
 spike_trains = [[] for _ in range(NUM_REGIONS)]
 
-window_start = events[0][2]
-window_end = window_start + TIME_WINDOW
-region_event_counts = [0] * NUM_REGIONS
+start_time = events[0][2]
+end_time = events[-1][2]
 
-for x, y, t, p in events:
-    if t < window_end:
-        region = map_to_region(x, y)
-        region_event_counts[region] += 1
-    else:
-        # Generate spikes for this window
-        for r in range(NUM_REGIONS):
-            spike = 1 if region_event_counts[r] >= THRESHOLD else 0
-            spike_trains[r].append(spike)
+current_time = start_time
 
-        # Reset for next window
-        region_event_counts = [0] * NUM_REGIONS
-        window_start = window_end
-        window_end += TIME_WINDOW
+while current_time < end_time:
+
+    window_end = current_time + TIME_WINDOW
+    region_event_counts = [0] * NUM_REGIONS
+
+    # Count events inside this window
+    for x, y, t, p in events:
+        if current_time <= t < window_end:
+            region = map_to_region(x, y)
+            region_event_counts[region] += 1
+
+    # Generate spikes
+    for r in range(NUM_REGIONS):
+        spike = 1 if region_event_counts[r] >= THRESHOLD else 0
+        spike_trains[r].append(spike)
+
+    current_time = window_end
 
 # -------------------------------
-# 5. Inspect spike trains
+# 6. Inspect spike trains
 # -------------------------------
+
 print("\nSpike trains (first 20 time windows):")
 for r in range(NUM_REGIONS):
     print(f"Region {r}: {spike_trains[r][:20]}")
 
 # -------------------------------
-# 6. Save spike trains (handover to SNN)
+# 7. Save spike trains
 # -------------------------------
+
 with open("region_spike_trains.json", "w") as f:
     json.dump(spike_trains, f)
 
