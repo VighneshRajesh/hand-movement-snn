@@ -14,7 +14,7 @@ aedat_file = "/home/asus/Desktop/snn/dataset/DvsGesture/user02/user02_led.aedat"
 # -------------------------------
 # 2. Read DVS events
 # -------------------------------
-events = read_aedat31(aedat_file, max_events=500000)
+events = read_aedat31(aedat_file, max_events=10000000)
 print("Total events read:", len(events))
 
 if not events:
@@ -75,7 +75,7 @@ for i, count in enumerate(region_counts):
 # -------------------------------
 
 TIME_WINDOW = 500000   # 500 ms
-THRESHOLD = 5
+THRESHOLD = 10
 NUM_REGIONS = 8
 
 events.sort(key=lambda e: e[2])
