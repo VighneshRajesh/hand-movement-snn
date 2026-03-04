@@ -117,8 +117,14 @@ for r in range(NUM_REGIONS):
 # 7. Save spike trains
 # -------------------------------
 
-with open("region_spike_trains.json", "w") as f:
-    json.dump(spike_trains, f)
+#with open("region_spike_trains.json", "w") as f:
+#    json.dump(spike_trains, f)
+# Convert spike trains into 8 features
+features = [sum(region) for region in spike_trains]
 
+with open("features.json", "w") as f:
+    json.dump(features, f)
+
+print("Features saved:", features)
 print("\nSpike trains saved to region_spike_trains.json")
 print("This file is the INPUT to the SNN module.")
