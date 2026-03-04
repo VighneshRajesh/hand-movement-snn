@@ -35,10 +35,10 @@ print("Model loaded successfully")
 # Choose test gesture
 # ===============================
 
-aedat_file = "/home/asus/Desktop/snn/dataset/DvsGesture/user02_led.aedat"
+aedat_file = "/home/asus/Desktop/snn/testfile/user20_led.aedat"
 
-start_time = 56103640
-end_time = 61860490
+start_time = 52731986
+end_time = 58159600
 
 # Extract features
 features = extract_features(aedat_file, start_time, end_time)
