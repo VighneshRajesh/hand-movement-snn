@@ -55,8 +55,10 @@ x = torch.tensor(features, dtype=torch.float32)
 # Predict
 with torch.no_grad():
     output = model(x)
-    prediction = 1 if output.item() > 0.5 else 0
 
+print("Model probability:", output.item())
+
+prediction = 1 if output.item() > 0.35 else 0
 # ===============================
 # Result
 # ===============================

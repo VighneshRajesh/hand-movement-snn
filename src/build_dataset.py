@@ -1,56 +1,51 @@
-import csv
 import os
 import json
+import csv
 from feature_extractor import extract_features
 
-DATASET_FOLDER = "/home/asus/Desktop/snn/dataset/DvsGesture"
+DATASET_PATH = "/home/asus/Desktop/snn/dataset/DvsGesture"
 
 X = []
 y = []
 
-print("Scanning dataset folder:", DATASET_FOLDER)
+print("Scanning dataset folder:", DATASET_PATH)
 
-for root, dirs, files in os.walk(DATASET_FOLDER):
+for file in os.listdir(DATASET_PATH):
 
-    for file in files:
+    print("Checking file:", file)
 
-        print("Checking file:", file)
+    if file.endswith("_labels.csv"):
 
-        if file.endswith("_labels.csv"):
+        csv_path = os.path.join(DATASET_PATH, file)
+        aedat_file = file.replace("_labels.csv", ".aedat")
+        aedat_path = os.path.join(DATASET_PATH, aedat_file)
 
-            label_path = os.path.join(root, file)
-            aedat_path = label_path.replace("_labels.csv", ".aedat")
+        print("Processing:", csv_path)
 
-            print("Processing:", label_path)
+        with open(csv_path) as f:
+            reader = csv.DictReader(f)
 
-            with open(label_path) as f:
+            for row in reader:
 
-                reader = csv.DictReader(f)
+                gesture_class = int(row["class"])
+                start = int(row["startTime_usec"])
+                end = int(row["endTime_usec"])
 
-                for row in reader:
+                features = extract_features(aedat_path, start, end)
 
-                    class_id = int(row["class"])
-                    start = int(row["startTime_usec"])
-                    end = int(row["endTime_usec"])
+                if features is None:
+                    continue
 
-                    features = extract_features(aedat_path, start, end)
+                # label assignment
+                if gesture_class == 2 or gesture_class == 3:
+                    label = 1
+                else:
+                    label = 0
 
-                    if features is None:
-                        continue
-
-                    # Wave gestures
-                    if class_id == 2 or class_id == 3:
-                        label = 1
-                    else:
-                        label = 0
-
-                    X.append(features)
-                    y.append(label)
+                X.append(features)
+                y.append(label)
 
 print("Total samples:", len(X))
-
-if len(X) > 0:
-    print("Example feature:", X[0])
 
 with open("dataset.json", "w") as f:
     json.dump({"X": X, "y": y}, f)
