@@ -23,6 +23,7 @@ for file in os.listdir(DATASET_PATH):
         print("Processing:", csv_path)
 
         with open(csv_path) as f:
+
             reader = csv.DictReader(f)
 
             for row in reader:
