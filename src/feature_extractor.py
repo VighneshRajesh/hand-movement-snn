@@ -18,10 +18,6 @@ def extract_features(aedat_file, start_time, end_time):
     if not events:
         return None
 
-    # REMOVE timestamp normalization
-# t0 = events[0][2]
-# events = [(x, y, t - t0, p) for (x, y, t, p) in events]
-
     # Filter gesture window
     events = [e for e in events if start_time <= e[2] <= end_time]
 
@@ -54,14 +50,7 @@ def extract_features(aedat_file, start_time, end_time):
         current = window_end
 
     # Convert spike trains → features
-    features = []
-    for region in spike_trains:
-        total = sum(region)
-        first_half = sum(region[:len(region)//2])
-        second_half = sum(region[len(region)//2:])
-
-        features.append(total)
-        features.append(first_half - second_half)
+    features = [sum(region) for region in spike_trains]
 
     if len(features) != 8:
         return None
