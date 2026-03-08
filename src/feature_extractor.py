@@ -1,6 +1,6 @@
 from read_dvs_aedat import read_aedat31
 
-TIME_WINDOW = 50000
+TIME_WINDOW = 10000
 THRESHOLD = 1
 NUM_REGIONS = 8
 
@@ -18,10 +18,7 @@ def extract_features(aedat_file, start_time, end_time):
     if not events:
         return None
 
-    # Filter gesture window
     events = [e for e in events if start_time <= e[2] <= end_time]
-
-    print("Filtered events:", len(events))
 
     if not events:
         return None
@@ -51,21 +48,4 @@ def extract_features(aedat_file, start_time, end_time):
 
         current = window_end
 
-    # Convert spike trains → features
-    features = []
-
-    for region in spike_trains:
-        total = sum(region)
-        first_half = sum(region[:len(region)//2])
-        second_half = sum(region[len(region)//2:])
-
-        features.append(total)
-        features.append(first_half - second_half)
-
-    # keep only first 8 values
-    features = features[:8]
-
-    if len(features) != 8:
-        return None
-
-    return features
+    return spike_trains

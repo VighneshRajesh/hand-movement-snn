@@ -5,14 +5,28 @@ from feature_extractor import extract_features
 
 DATASET_PATH = "/home/asus/Desktop/snn/dataset/DvsGesture"
 
+MAX_TIMESTEPS = 200
+
 X = []
 y = []
+
+
+def pad_or_trim(spikes):
+
+    spikes = list(zip(*spikes))  # convert to [time, regions]
+
+    if len(spikes) > MAX_TIMESTEPS:
+        spikes = spikes[:MAX_TIMESTEPS]
+
+    while len(spikes) < MAX_TIMESTEPS:
+        spikes.append([0] * 8)
+
+    return spikes
+
 
 print("Scanning dataset folder:", DATASET_PATH)
 
 for file in os.listdir(DATASET_PATH):
-
-    print("Checking file:", file)
 
     if file.endswith("_labels.csv"):
 
@@ -32,12 +46,13 @@ for file in os.listdir(DATASET_PATH):
                 start = int(row["startTime_usec"])
                 end = int(row["endTime_usec"])
 
-                features = extract_features(aedat_path, start, end)
+                spikes = extract_features(aedat_path, start, end)
 
-                if features is None:
+                if spikes is None:
                     continue
 
-                # label assignment
+                features = pad_or_trim(spikes)
+
                 if gesture_class == 2 or gesture_class == 3:
                     label = 1
                 else:
