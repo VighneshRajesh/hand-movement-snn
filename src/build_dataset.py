@@ -1,54 +1,74 @@
 import os
-import json
 import csv
+import pickle
+
 from feature_extractor import extract_features
 
-DATASET_PATH = "/home/asus/Desktop/snn/dataset/DvsGesture"
+# dataset location
+DATASET_FOLDER = r"C:\Users\USER\hand-movement-snn\dataset\DvsGesture"
 
-X = []
-y = []
+dataset = []
+labels = []
 
-print("Scanning dataset folder:", DATASET_PATH)
+print("Scanning dataset folder:", DATASET_FOLDER)
 
-for file in os.listdir(DATASET_PATH):
+# loop through files
+for file in os.listdir(DATASET_FOLDER):
 
-    print("Checking file:", file)
+    if file.endswith(".aedat"):
 
-    if file.endswith("_labels.csv"):
+        aedat_path = os.path.join(DATASET_FOLDER, file)
 
-        csv_path = os.path.join(DATASET_PATH, file)
-        aedat_file = file.replace("_labels.csv", ".aedat")
-        aedat_path = os.path.join(DATASET_PATH, aedat_file)
+        # find corresponding label file
+        label_file = file.replace(".aedat", "_labels.csv")
+        label_path = os.path.join(DATASET_FOLDER, label_file)
 
-        print("Processing:", csv_path)
+        print("Processing:", file)
 
-        with open(csv_path) as f:
+        if not os.path.exists(label_path):
+            print("Label file missing:", label_file)
+            continue
 
-            reader = csv.DictReader(f)
+        # open label file
+        with open(label_path, "r") as f:
+
+            reader = csv.reader(f)
+
+            # skip CSV header
+            next(reader)
 
             for row in reader:
 
-                gesture_class = int(row["class"])
-                start = int(row["startTime_usec"])
-                end = int(row["endTime_usec"])
+                gesture = int(row[0])
+                start_time = int(row[1])
+                end_time = int(row[2])
 
-                features = extract_features(aedat_path, start, end)
-
-                if features is None:
-                    continue
-
-                # label assignment
-                if gesture_class == 2 or gesture_class == 3:
+                # convert 11 gestures → binary
+                if gesture in [2, 3]:
                     label = 1
                 else:
                     label = 0
 
-                X.append(features)
-                y.append(label)
+                features = extract_features(
+                    aedat_path,
+                    start_time,
+                    end_time
+                )
 
-print("Total samples:", len(X))
+                if features is None:
+                    continue
 
-with open("dataset.json", "w") as f:
-    json.dump({"X": X, "y": y}, f)
+                dataset.append(features)
+                labels.append(label)
 
-print("Dataset built successfully")
+print("\nDataset statistics")
+print("------------------")
+print("Total samples:", len(dataset))
+print("Positive (hand):", sum(labels))
+print("Negative (no hand):", len(labels) - sum(labels))
+
+# save dataset
+with open("gesture_dataset.pkl", "wb") as f:
+    pickle.dump((dataset, labels), f)
+
+print("\nDataset saved as: gesture_dataset.pkl")

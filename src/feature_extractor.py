@@ -1,14 +1,13 @@
 from read_dvs_aedat import read_aedat31
 
-TIME_WINDOW = 50000
-THRESHOLD = 1
-NUM_REGIONS = 8
-
+NUM_REGIONS = 4
 
 def map_to_region(x, y):
-    col = x // 32
+
+    col = x // 64
     row = y // 64
-    return row * 4 + col
+
+    return row * 2 + col
 
 
 def extract_features(aedat_file, start_time, end_time):
@@ -18,54 +17,37 @@ def extract_features(aedat_file, start_time, end_time):
     if not events:
         return None
 
-    # Filter gesture window
-    events = [e for e in events if start_time <= e[2] <= end_time]
+    filtered = []
 
-    print("Filtered events:", len(events))
+    for x, y, p, t in events:
+        if start_time <= t <= end_time:
+            filtered.append((x, y, p, t))
 
-    if not events:
+    if len(filtered) == 0:
         return None
 
-    events.sort(key=lambda e: e[2])
+    on_counts = [0]*NUM_REGIONS
+    off_counts = [0]*NUM_REGIONS
 
-    spike_trains = [[] for _ in range(NUM_REGIONS)]
+    for x, y, p, t in filtered:
 
-    start = events[0][2]
-    end = events[-1][2]
+        region = map_to_region(x, y)
 
-    current = start
+        if region < 0 or region >= NUM_REGIONS:
+            continue
 
-    while current < end:
+        if p == 1:
+            on_counts[region] += 1
+        else:
+            off_counts[region] += 1
 
-        window_end = current + TIME_WINDOW
-        counts = [0] * NUM_REGIONS
+    features = on_counts + off_counts
 
-        for x, y, t, p in events:
-            if current <= t < window_end:
-                region = map_to_region(x, y)
-                counts[region] += 1
+    total = sum(features)
 
-        for r in range(NUM_REGIONS):
-            spike = 1 if counts[r] >= THRESHOLD else 0
-            spike_trains[r].append(spike)
-
-        current = window_end
-
-    # Convert spike trains → features
-    features = []
-
-    for region in spike_trains:
-        total = sum(region)
-        first_half = sum(region[:len(region)//2])
-        second_half = sum(region[len(region)//2:])
-
-        features.append(total)
-        features.append(first_half - second_half)
-
-    # keep only first 8 values
-    features = features[:8]
-
-    if len(features) != 8:
+    if total == 0:
         return None
+
+    features = [f/total for f in features]
 
     return features
