@@ -1,21 +1,8 @@
 import torch
+import csv
+import random
 from feature_extractor import extract_features
 from lif_snn_model import GestureSNN
-
-MAX_TIMESTEPS = 200
-
-def pad_or_trim(spikes):
-
-    spikes = list(zip(*spikes))
-
-    if len(spikes) > MAX_TIMESTEPS:
-        spikes = spikes[:MAX_TIMESTEPS]
-
-    while len(spikes) < MAX_TIMESTEPS:
-        spikes.append([0] * 8)
-
-    return spikes
-
 
 model = GestureSNN()
 
@@ -25,32 +12,52 @@ model.eval()
 
 print("Model loaded")
 
-
 aedat_file = "/home/asus/Desktop/snn/testfile/user20_led.aedat"
+csv_file = "/home/asus/Desktop/snn/testfile/user20_led_labels.csv"
 
-start_time = 96032665
-end_time = 100793005
+gestures = []
+
+with open(csv_file) as f:
+
+    reader = csv.DictReader(f)
+
+    for row in reader:
+
+        gesture_class = int(row["class"])
+
+        start = int(row["startTime_usec"])
+        end = int(row["endTime_usec"])
+
+        gestures.append((gesture_class,start,end))
 
 
-spikes = extract_features(aedat_file, start_time, end_time)
+gesture_class,start_time,end_time = random.choice(gestures)
 
-if spikes is None:
+print("\nRandom gesture selected")
+print("True class:",gesture_class)
+
+features = extract_features(aedat_file,start_time,end_time)
+
+if features is None:
     print("Feature extraction failed")
     exit()
 
-features = pad_or_trim(spikes)
-
-x = torch.tensor(features, dtype=torch.float32).unsqueeze(0)
+x = torch.tensor(features,dtype=torch.float32).unsqueeze(0)
 
 with torch.no_grad():
 
-    output = model(x)
+    prob = model(x).item()
 
-prob = output.item()
+print("Gesture probability:",prob)
 
-print("Gesture probability:", prob)
-
-if prob > 0.30:
-    print("Hand waving detected")
+if prob > 0.5:
+    prediction = "Wave detected"
 else:
-    print("No hand gesture")
+    prediction = "No wave"
+
+print("Prediction:",prediction)
+
+if gesture_class in [2,3]:
+    print("Actual gesture type: Wave")
+else:
+    print("Actual gesture type: Not wave")

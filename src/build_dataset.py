@@ -5,24 +5,8 @@ from feature_extractor import extract_features
 
 DATASET_PATH = "/home/asus/Desktop/snn/dataset/DvsGesture"
 
-MAX_TIMESTEPS = 200
-
 X = []
 y = []
-
-
-def pad_or_trim(spikes):
-
-    spikes = list(zip(*spikes))  # convert to [time, regions]
-
-    if len(spikes) > MAX_TIMESTEPS:
-        spikes = spikes[:MAX_TIMESTEPS]
-
-    while len(spikes) < MAX_TIMESTEPS:
-        spikes.append([0] * 8)
-
-    return spikes
-
 
 print("Scanning dataset folder:", DATASET_PATH)
 
@@ -43,17 +27,16 @@ for file in os.listdir(DATASET_PATH):
             for row in reader:
 
                 gesture_class = int(row["class"])
+
                 start = int(row["startTime_usec"])
                 end = int(row["endTime_usec"])
 
-                spikes = extract_features(aedat_path, start, end)
+                features = extract_features(aedat_path, start, end)
 
-                if spikes is None:
+                if features is None:
                     continue
 
-                features = pad_or_trim(spikes)
-
-                if gesture_class == 2 or gesture_class == 3:
+                if gesture_class in [2,3]:
                     label = 1
                 else:
                     label = 0
@@ -62,6 +45,8 @@ for file in os.listdir(DATASET_PATH):
                 y.append(label)
 
 print("Total samples:", len(X))
+print("Wave samples:", sum(y))
+print("Non-wave samples:", len(y) - sum(y))
 
 with open("dataset.json", "w") as f:
     json.dump({"X": X, "y": y}, f)

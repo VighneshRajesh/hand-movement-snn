@@ -1,13 +1,15 @@
 from read_dvs_aedat import read_aedat31
 
 TIME_WINDOW = 10000
-THRESHOLD = 1
+THRESHOLD = 2
 NUM_REGIONS = 8
 
 
 def map_to_region(x, y):
+
     col = x // 32
     row = y // 64
+
     return row * 4 + col
 
 
@@ -35,17 +37,38 @@ def extract_features(aedat_file, start_time, end_time):
     while current < end:
 
         window_end = current + TIME_WINDOW
+
         counts = [0] * NUM_REGIONS
 
         for x, y, t, p in events:
+
+            if t >= window_end:
+                break
+
             if current <= t < window_end:
+
                 region = map_to_region(x, y)
+
                 counts[region] += 1
 
         for r in range(NUM_REGIONS):
+
             spike = 1 if counts[r] >= THRESHOLD else 0
+
             spike_trains[r].append(spike)
 
         current = window_end
 
-    return spike_trains
+    features = []
+
+    for region in spike_trains:
+
+        half = len(region) // 2
+
+        early = sum(region[:half])
+        late = sum(region[half:])
+
+        features.append(early)
+        features.append(late)
+
+    return features

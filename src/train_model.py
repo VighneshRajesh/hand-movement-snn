@@ -2,13 +2,22 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import json
+import random
 from lif_snn_model import GestureSNN
 
 with open("dataset.json") as f:
     data = json.load(f)
 
-X = torch.tensor(data["X"], dtype=torch.float32)
-y = torch.tensor(data["y"], dtype=torch.float32).view(-1, 1)
+X = data["X"]
+y = data["y"]
+
+combined = list(zip(X, y))
+random.shuffle(combined)
+
+X, y = zip(*combined)
+
+X = torch.tensor(X, dtype=torch.float32)
+y = torch.tensor(y, dtype=torch.float32).view(-1,1)
 
 print("Dataset shape:", X.shape)
 
@@ -23,9 +32,10 @@ y_test = y[split:]
 model = GestureSNN()
 
 criterion = nn.BCELoss()
+
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-for epoch in range(200):
+for epoch in range(400):
 
     optimizer.zero_grad()
 
@@ -40,6 +50,7 @@ for epoch in range(200):
     if epoch % 20 == 0:
         print("Epoch", epoch, "Loss", loss.item())
 
+
 with torch.no_grad():
 
     preds = model(X_test)
@@ -50,6 +61,6 @@ with torch.no_grad():
 
 print("Test Accuracy:", accuracy.item())
 
-torch.save(model.state_dict(), "gesture_snn.pth")
+torch.save(model.state_dict(),"gesture_snn.pth")
 
 print("Model saved")
