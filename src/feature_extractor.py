@@ -59,6 +59,9 @@ def extract_features(aedat_file, start_time, end_time):
 
         current = window_end
 
+
+    # -------- temporal features --------
+
     features = []
 
     for region in spike_trains:
@@ -71,4 +74,17 @@ def extract_features(aedat_file, start_time, end_time):
         features.append(early)
         features.append(late)
 
-    return features
+
+    # -------- left-right symmetry --------
+
+    sym_features = []
+
+    for i in range(0, len(features), 4):
+
+        left = features[i] + features[i+2]
+        right = features[i+1] + features[i+3]
+
+        sym_features.append(left)
+        sym_features.append(right)
+
+    return sym_features

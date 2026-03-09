@@ -49,7 +49,8 @@ class GestureSNN(nn.Module):
 
         super().__init__()
 
-        self.lif1 = LIFLayer(16, 32)
+        # INPUT SIZE = 8 (matches your feature extractor)
+        self.lif1 = LIFLayer(8, 32)
 
         self.lif2 = LIFLayer(32, 32)
 
